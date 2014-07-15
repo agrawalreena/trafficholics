@@ -15,6 +15,9 @@
  */
 package com.example.android.opengl;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 import android.content.Context;
 import android.opengl.GLSurfaceView;
 import android.view.MotionEvent;
@@ -28,6 +31,8 @@ public class MyGLSurfaceView extends GLSurfaceView {
 
     private final MyGLRenderer mRenderer;
 
+    private Timer timer;
+
     public MyGLSurfaceView(Context context) {
         super(context);
 
@@ -40,11 +45,12 @@ public class MyGLSurfaceView extends GLSurfaceView {
 
         // Render the view only when there is a change in the drawing data
         setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+        
     }
 
-    private final float TOUCH_SCALE_FACTOR = 180.0f / 320;
-    private float mPreviousX;
-    private float mPreviousY;
+    private final float TOUCH_SCALE_FACTOR = 2;
+    private float x;
+    private float y;
 
     @Override
     public boolean onTouchEvent(MotionEvent e) {
@@ -52,34 +58,36 @@ public class MyGLSurfaceView extends GLSurfaceView {
         // and other input controls. In this case, you are only
         // interested in events where the touch position changed.
 
-        float x = e.getX();
-        float y = e.getY();
+        x = e.getX();
+        y = e.getY();
 
         switch (e.getAction()) {
-            case MotionEvent.ACTION_MOVE:
-
-                float dx = x - mPreviousX;
-                float dy = y - mPreviousY;
-
-                // reverse direction of rotation above the mid-line
-                if (y > getHeight() / 2) {
-                    dx = dx * -1 ;
-                }
-
-                // reverse direction of rotation to left of the mid-line
-                if (x < getWidth() / 2) {
-                    dy = dy * -1 ;
-                }
-
-                mRenderer.setAngle(
-                        mRenderer.getAngle() +
-                        ((dx + dy) * TOUCH_SCALE_FACTOR));  // = 180.0f / 320
-                requestRender();
+            case MotionEvent.ACTION_DOWN:
+            	if (timer != null) {
+            		timer.cancel();
+            		timer.purge();
+            	}
+            	timer = new Timer();
+            	timer.schedule(new TimerTask() {
+        			
+        			@Override
+        			public void run() {
+        				// TODO Auto-generated method stub
+        				int dir = x < getWidth() / 2 ? 1 : -1 ;
+                        
+                        mRenderer.setAngle(
+                                mRenderer.getAngle() +
+                                (dir * TOUCH_SCALE_FACTOR));  // = 180.0f / 320
+                        requestRender();
+        			}
+        		}, 75, 75);
+            	break;
+            case MotionEvent.ACTION_UP:
+            	timer.purge();
+            	timer.cancel();
+            	break;
         }
 
-        mPreviousX = x;
-        mPreviousY = y;
         return true;
     }
-
 }
